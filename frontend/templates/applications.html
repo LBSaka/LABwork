@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Applications</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/homepage.js" defer></script>
+</head>
+<body>
+    <div  id="currentApplications">
+        <table>
+            <thead>
+
+            </thead>
+            <tbody id="jobTable"></tbody>
+        </table>
+    </div>
+    <button id="NewApplicationButton">New Application</button>
+    <form id="jobForm" action="">
+
+        <label for="companyName">Company Namwe</label>
+        <input required type="text" id="companyName" placeholder="LABwork Incorporated">
+        
+        <label for="position">Position</label>
+        <input required type="text" id="position" placeholder="Radar Technician">
+        
+        <select required name="Status" id="status">
+            <option value="NYA">Not Yet Applied</option>
+            <option value="Applied">Applied</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Accepted">Accepted</option>
+        </select>
+        
+        <label for="date">Date Applied</label>
+        <input required type="date" id="dateApplied">
+        
+        <button type="submit" id="createJobButton">Create Job</button>
+    </form>
+</body>
+</html>

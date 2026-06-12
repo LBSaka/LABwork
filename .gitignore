@@ -1,0 +1,28 @@
+# Python virtual environment
+.venv/
+venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Flask / environment secrets
+.env
+.flaskenv
+instance/
+
+# Local database / generated data
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Editor / OS junk
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
