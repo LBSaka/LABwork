@@ -15,7 +15,12 @@ function handleCreateJob(event) {
     renderJobs(jobs);
     jobForm.reset();
 }
-
+function deleteJob(id) { 
+    jobs = jobs.filter(function(job) {
+         return job.id !== id; 
+        });
+         renderJobs(jobs); 
+        }
 function getJobFormData() {
     return {
         id: Date.now(),
@@ -34,5 +39,11 @@ function renderJobs(jobsToRender){
 function renderJobRow(job) {
     const row = document.createElement("tr");
     row.innerHTML = "<td>" + job.company + "</td><td>" + job.position + "</td><td>" + job.status + "</td><td>" + job.dateApplied + "</td>";
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "Delete";
+    deleteButton.addEventListener("click", function() { deleteJob(job.id); });
+    const deleteCell = document.createElement("td");
+    deleteCell.appendChild(deleteButton);
+    row.appendChild(deleteCell);
     jobTable.appendChild(row);
 }
