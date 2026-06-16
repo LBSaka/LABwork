@@ -35,37 +35,90 @@ function handleOpenForm(mode, job = null) {
 
 
 }
+
+
+
 function handleCloseForm() {
     jobFormOverlay.classList.add("hidden");
     jobForm.reset();
     editingJobId = null;
 }
-function handleSubmitJob(event) {
+
+async function loadApplications() {
+    const res = await fetch("/api/applications");
+    const data = await res.json();
+
+    if (!res.ok) {
+        console.error(data.error || "Failed to load applications");
+        return;
+    }
+
+    jobs = data.applications;
+    renderJobs(jobs);
+}
+
+async function createApplication(payload) {
+    const res = await fetch("/api/applications", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data.error || "Failed to create application");
+    }
+
+    return data.application;
+}
+async function updateApplication(id, payload) {
+    const res = await fetch("/api/applications/" + id, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data.error || "Failed to update application");
+    }
+
+    return data.application;
+}
+
+async function deleteJob(id) {
+    const res = await fetch("/api/applications/" + id, {
+        method: "DELETE"
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        console.error(data.error || "Failed to delete application");
+        return;
+    }
+
+    await loadApplications();
+}
+
+async function handleSubmitJob(event) {
     event.preventDefault();
 
     const formData = getJobFormData();
 
     if (editingJobId === null) {
-        const newJob = {
-            id: Date.now(),
-            ...formData
-        };
-
-        jobs.push(newJob);
+        await createApplication(formData);
     } else {
-        jobs = jobs.map(function(job) {
-            if (job.id === editingJobId) {
-                return {
-                    id: job.id,
-                    ...formData
-                };
-            }
-
-            return job;
-        });
+        await updateApplication(editingJobId, formData);
     }
 
-    renderJobs(jobs);
+    await loadApplications();
     handleCloseForm();
 }
 function deleteJob(id) {
@@ -132,3 +185,5 @@ function renderJobRow(job) {
 
     jobTable.appendChild(row);
 }
+
+loadApplications();
