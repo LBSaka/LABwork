@@ -44,7 +44,7 @@ body > .navBar,
 body > button,
 body > .profileDisplay,
 body > #currentApplications,
-body > #NewApplicationButton,
+body > #newApplicationButton,
 body > #jobForm {
   max-width: 960px;
   margin-left: auto;
@@ -107,7 +107,7 @@ button:hover {
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
 }
 
-#NewApplicationButton {
+#newApplicationButton {
   display: block;
   margin-top: 1.5rem;
 }
@@ -116,7 +116,9 @@ form {
   display: grid;
   gap: 0.75rem;
 }
-
+.hidden {
+  display: none;
+}
 label {
   font-weight: 600;
   color: #374151;
@@ -175,7 +177,7 @@ span {
   body > button,
   body > .profileDisplay,
   body > #currentApplications,
-  body > #NewApplicationButton,
+  body > #newApplicationButton,
   body > #jobForm {
     max-width: none;
     margin-left: 1rem;
@@ -185,4 +187,26 @@ span {
   .navBar {
     flex-direction: column;
   }
+}
+#jobFormOverlay {
+position: fixed;
+inset: 0;
+background: rgba(0, 0, 0, 0.55);
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 1000;
+}
+
+#jobFormOverlay.hidden {
+display: none;
+}
+
+#jobFormPanel {
+width: min(600px, 92vw);
+max-height: 90vh;
+overflow-y: auto;
+padding: 24px;
+background: white;
+border-radius: 12px;
 }
