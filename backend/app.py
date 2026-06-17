@@ -17,7 +17,9 @@ app = Flask(
     static_url_path="/static",
 )
 
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-this-later")@app.get("/")
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-this-later")
+
+@app.get("/")
 def home():
     return render_template("base.html")
 def login_required(route_function):
@@ -55,7 +57,7 @@ def signup():
         cursor = conn.execute("""
                               INSERT INTO users (username, password_hash)
                               VALUES (?, ?)
-                              """, (username, password))
+                              """, (username, password_hash))
         conn.commit()
 
     except sqlite3.IntegrityError:
