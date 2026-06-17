@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LABwork</title>
     <link rel="stylesheet" href="../static/styles.css">
 </head>
+
 <body>
     <h1>LABwork</h1>
     <h2>By Luke A Busacca</h2>
@@ -15,7 +17,25 @@
         <li><a href="profile.html">Profile</a></li>
         <li><a>SUSUME Progress Tracker</a></li>
     </ul>
+    <div class="profileDisplay">
+        <h2>Sign In</h2>
+
+        <form id="loginForm">
+            <label for="loginUsername">Username</label>
+            <input id="loginUsername" type="text" required>
+
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" type="password" required>
+
+            <button type="submit">Sign In</button>
+        </form>
+
+        <p>No account yet? <a href="/signup.html">Create one</a></p>
+    </div>
+
+    <script src="/static/auth.js"></script>
     <br>
     <p>This is a Work in progress</p>
 </body>
+
 </html>

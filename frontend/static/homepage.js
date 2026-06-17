@@ -48,6 +48,11 @@ async function loadApplications() {
     const res = await fetch("/api/applications");
     const data = await res.json();
 
+    if (res.status === 401) {
+        window.location.href = "/";
+        return;
+    }
+
     if (!res.ok) {
         console.error(data.error || "Failed to load applications");
         return;
@@ -120,12 +125,6 @@ async function handleSubmitJob(event) {
 
     await loadApplications();
     handleCloseForm();
-}
-function deleteJob(id) {
-    jobs = jobs.filter(function (job) {
-        return job.id !== id;
-    });
-    renderJobs(jobs);
 }
 
 function editJob(id) {
