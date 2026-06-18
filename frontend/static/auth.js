@@ -1,5 +1,6 @@
 const loginForm = document.getElementById("loginForm");
 const signupForm = document.getElementById("signupForm");
+const demoLoginButton = document.getElementById("demoLoginButton");
 
 if (loginForm) {
     loginForm.addEventListener("submit", async function(event) {
@@ -46,6 +47,22 @@ if (signupForm) {
 
         if (!res.ok) {
             alert(data.error || "Signup failed");
+            return;
+        }
+
+        window.location.href = "/applications.html";
+    });
+}
+if (demoLoginButton) {
+    demoLoginButton.addEventListener("click", async function() {
+        const res = await fetch("/api/demo-login", {
+            method: "POST"
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.error || "Demo login failed");
             return;
         }
 

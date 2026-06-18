@@ -4,6 +4,7 @@ import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import os
+from demo_data import reset_demo_data
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
 TEMPLATES_DIR = FRONTEND_DIR / "templates"
@@ -73,6 +74,43 @@ def signup():
     return jsonify({
         "ok": True
     }), 201
+
+@app.post("/api/demo-login")
+def demo_login():
+    demo_username = "John LABwork"
+
+    conn = get_db_connection()
+
+    demo_user = conn.execute("""
+        SELECT id, username
+        FROM users
+        WHERE username = ?
+    """, (demo_username,)).fetchone()
+
+    if demo_user is None:
+        cursor = conn.execute("""
+            INSERT INTO users (username, password_hash)
+            VALUES (?, ?)
+        """, (
+            demo_username,
+            generate_password_hash("demo")
+        ))
+
+        demo_user_id = cursor.lastrowid
+    else:
+        demo_user_id = demo_user["id"]
+
+    reset_demo_data(conn, demo_user_id)
+
+    conn.commit()
+    conn.close()
+
+    session["user_id"] = demo_user_id
+    session["username"] = demo_username
+
+    return jsonify({
+        "ok": True
+    })
 
 @app.post("/api/login")
 def login():
@@ -611,6 +649,7 @@ def status_to_event_type(status):
     }
 
     return event_map.get(status)
+
 
 init_db()
 
