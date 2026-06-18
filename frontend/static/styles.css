@@ -158,6 +158,32 @@ button:hover {
   background: #183d5f;
 }
 
+#applicationControls {
+  max-width: 960px;
+  margin: 0 auto 1rem;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 0.75rem;
+}
+
+th[data-sort] {
+  cursor: pointer;
+  user-select: none;
+}
+
+th[data-sort]:hover {
+  background: #dfe6ee;
+}
+
+@media (max-width: 700px) {
+  #applicationControls {
+    margin-left: 1rem;
+    margin-right: 1rem;
+    grid-template-columns: 1fr;
+  }
+}
+
+
 #currentApplications,
 #jobForm,
 .profileDisplay {

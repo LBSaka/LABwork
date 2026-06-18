@@ -13,9 +13,14 @@ const interviewFields = document.getElementById("interviewFields");
 const interviewRound = document.getElementById("interviewRound");
 const interviewDate = document.getElementById("interviewDate");
 const notes = document.getElementById("notes");
+const applicationSearch = document.getElementById("applicationSearch");
+const statusFilter = document.getElementById("statusFilter");
+const sortableHeaders = document.querySelectorAll("th[data-sort]");
 
 let jobs = [];
 let editingJobId = null;
+let sortField = "dateApplied";
+let sortDirection = "desc";
 const statusDetailOptions = {
     Applied: [
         "Awaiting Reply",
@@ -25,12 +30,12 @@ const statusDetailOptions = {
 };
 
 
-status.addEventListener("change", function() {
+status.addEventListener("change", function () {
     updateStatusDetailOptions();
 });
 
 statusDetail.addEventListener("change", updateInterviewFieldVisibility);
-newApplicationButton.addEventListener("click", function() {
+newApplicationButton.addEventListener("click", function () {
     handleOpenForm("create");
 });
 cancelButton.addEventListener("click", handleCloseForm);
@@ -53,7 +58,7 @@ function updateStatusDetailOptions(selectedDetail = "") {
 
     statusDetail.innerHTML = "<option value=''>None</option>";
 
-    options.forEach(function(optionText) {
+    options.forEach(function (optionText) {
         const option = document.createElement("option");
         option.value = optionText;
         option.textContent = optionText;
@@ -134,7 +139,7 @@ async function loadApplications() {
     }
 
     jobs = data.applications;
-    renderJobs(jobs);
+    applyFiltersAndSort();
 }
 
 async function createApplication(payload) {
@@ -224,7 +229,7 @@ async function handleSubmitJob(event) {
 }
 
 function editJob(id) {
-    const jobToEdit = jobs.find(function(job) {
+    const jobToEdit = jobs.find(function (job) {
         return job.id === id;
     });
 
@@ -248,6 +253,142 @@ function getJobFormData() {
     };
 }
 
+function applyFiltersAndSort() {
+    const searchText = applicationSearch
+        ? applicationSearch.value.trim().toLowerCase()
+        : "";
+
+    const selectedStatus = statusFilter
+        ? statusFilter.value
+        : "";
+
+    let filteredJobs = jobs.filter(function(job) {
+        const company = job.company.toLowerCase();
+        const position = job.position.toLowerCase();
+
+        const matchesSearch =
+            company.includes(searchText) ||
+            position.includes(searchText);
+
+        const matchesStatus =
+            selectedStatus === "" ||
+            job.status === selectedStatus;
+
+        return matchesSearch && matchesStatus;
+    });
+
+    filteredJobs.sort(function(a, b) {
+        let aValue = a[sortField];
+        let bValue = b[sortField];
+
+        if (sortField === "dateApplied") {
+            aValue = new Date(aValue);
+            bValue = new Date(bValue);
+        } else {
+            aValue = String(aValue).toLowerCase();
+            bValue = String(bValue).toLowerCase();
+        }
+
+        if (aValue < bValue) {
+            return sortDirection === "asc" ? -1 : 1;
+        }
+
+        if (aValue > bValue) {
+            return sortDirection === "asc" ? 1 : -1;
+        }
+
+        return 0;
+    });
+
+    console.log("Rendering filtered jobs:", filteredJobs.length, "sort:", sortField, sortDirection);
+
+    updateSortHeaders();
+    renderJobs(filteredJobs);
+}
+
+function updateSortHeaders() {
+    sortableHeaders.forEach(function(header) {
+        const label = header.dataset.label;
+        const field = header.dataset.sort;
+
+        if (field !== sortField) {
+            header.textContent = label;
+            return;
+        }
+
+        if (sortDirection === "asc") {
+            header.textContent = label + " ↑";
+        } else {
+            header.textContent = label + " ↓";
+        }
+    });
+}
+function setupSortAndFilterControls() {
+    if (applicationSearch !== null) {
+        applicationSearch.addEventListener("input", function() {
+            console.log("Search changed:", applicationSearch.value);
+            applyFiltersAndSort();
+        });
+    } else {
+        console.log("applicationSearch not found");
+    }
+
+    if (statusFilter !== null) {
+        statusFilter.addEventListener("change", function() {
+            console.log("Status filter changed:", statusFilter.value);
+            applyFiltersAndSort();
+        });
+    } else {
+        console.log("statusFilter not found");
+    }
+
+    console.log("Sortable headers found:", sortableHeaders.length);
+
+    sortableHeaders.forEach(function(header) {
+        header.addEventListener("click", function() {
+            const clickedField = header.dataset.sort;
+
+            console.log("Header clicked:", clickedField);
+
+            if (sortField === clickedField) {
+                if (sortDirection === "asc") {
+                    sortDirection = "desc";
+                } else {
+                    sortDirection = "asc";
+                }
+            } else {
+                sortField = clickedField;
+
+                if (sortField === "dateApplied") {
+                    sortDirection = "desc";
+                } else {
+                    sortDirection = "asc";
+                }
+            }
+
+            applyFiltersAndSort();
+        });
+    });
+}
+
+function updateSortHeaders() {
+    sortableHeaders.forEach(function(header) {
+        const label = header.dataset.label;
+        const field = header.dataset.sort;
+
+        if (field !== sortField) {
+            header.textContent = label;
+            return;
+        }
+
+        if (sortDirection === "asc") {
+            header.textContent = label + " ↑";
+        } else {
+            header.textContent = label + " ↓";
+        }
+    });
+}
+
 function renderJobs(jobsToRender) {
     jobTable.innerHTML = "";
     jobsToRender.forEach(renderJobRow);
@@ -267,33 +408,33 @@ function renderJobRow(job) {
 
     detailsRow.innerHTML =
         "<td colspan='4'>" +
-            "<div class='jobDetails'>" +
-                "<p><strong>Status Detail:</strong> " + (job.statusDetail || "None") + "</p>" +
-                "<p><strong>Interview Round:</strong> " + (job.interviewRound || "None") + "</p>" +
-                "<p><strong>Interview Date:</strong> " + (job.interviewDate || "None") + "</p>" +
-                "<p><strong>Notes:</strong> " + (job.notes || "None") + "</p>" +
-            "</div>" +
+        "<div class='jobDetails'>" +
+        "<p><strong>Status Detail:</strong> " + (job.statusDetail || "None") + "</p>" +
+        "<p><strong>Interview Round:</strong> " + (job.interviewRound || "None") + "</p>" +
+        "<p><strong>Interview Date:</strong> " + (job.interviewDate || "None") + "</p>" +
+        "<p><strong>Notes:</strong> " + (job.notes || "None") + "</p>" +
+        "</div>" +
         "</td>";
 
     const detailsBox = detailsRow.querySelector(".jobDetails");
 
     const editButton = document.createElement("button");
     editButton.textContent = "Edit";
-    editButton.addEventListener("click", function(event) {
+    editButton.addEventListener("click", function (event) {
         event.stopPropagation();
         editJob(job.id);
     });
 
     const deleteButton = document.createElement("button");
     deleteButton.textContent = "Delete";
-    deleteButton.addEventListener("click", function(event) {
+    deleteButton.addEventListener("click", function (event) {
         event.stopPropagation();
         deleteJob(job.id);
     });
 
     const archiveButton = document.createElement("button");
     archiveButton.textContent = "Archive";
-    archiveButton.addEventListener("click", function(event) {
+    archiveButton.addEventListener("click", function (event) {
         event.stopPropagation();
         archiveJob(job.id);
     });
@@ -302,7 +443,7 @@ function renderJobRow(job) {
     detailsBox.appendChild(deleteButton);
     detailsBox.appendChild(archiveButton);
 
-    summaryRow.addEventListener("click", function() {
+    summaryRow.addEventListener("click", function () {
         detailsRow.classList.toggle("hidden");
     });
 
@@ -310,5 +451,6 @@ function renderJobRow(job) {
     jobTable.appendChild(detailsRow);
 }
 
+setupSortAndFilterControls();
 updateStatusDetailOptions();
 loadApplications();

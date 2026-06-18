@@ -29,14 +29,26 @@
         </div>
     </header>
     <div id="jobsDashboard">
+        <div id="applicationControls">
+            <input type="text" id="applicationSearch" placeholder="Search company or position...">
+
+            <select id="statusFilter">
+                <option value="">All Statuses</option>
+                <option value="NYA">Not Yet Applied</option>
+                <option value="Applied">Applied</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Accepted">Accepted</option>
+            </select>
+        </div>
+
         <div id="currentApplications">
             <table>
                 <thead>
                     <tr>
-                        <th>Company</th>
-                        <th>Position</th>
-                        <th>Status</th>
-                        <th>Date Applied</th>
+                        <th data-sort="company" data-label="Company">Company</th>
+                        <th data-sort="position" data-label="Position">Position</th>
+                        <th data-sort="status" data-label="Status">Status</th>
+                        <th data-sort="dateApplied" data-label="Date Applied">Date Applied</th>
                     </tr>
                 </thead>
                 <tbody id="jobTable"></tbody>
@@ -45,7 +57,6 @@
 
         <button id="newApplicationButton">New Application</button>
     </div>
-
     <div id="jobFormOverlay" class="hidden">
         <div id="jobFormPanel">
             <form id="jobForm" action="">
