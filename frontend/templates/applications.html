@@ -15,28 +15,36 @@
         <p id="currentUserDisplay">Checking login...</p>
         <button id="logoutButton" type="button">Logout</button>
     </div>
+
     <div id="jobsDashboard">
         <div id="currentApplications">
             <table>
                 <thead>
-
+                    <tr>
+                        <th>Company</th>
+                        <th>Position</th>
+                        <th>Status</th>
+                        <th>Date Applied</th>
+                    </tr>
                 </thead>
                 <tbody id="jobTable"></tbody>
             </table>
         </div>
-        <button id="newApplicationButton">New Application</button>
 
+        <button id="newApplicationButton">New Application</button>
     </div>
+
     <div id="jobFormOverlay" class="hidden">
         <div id="jobFormPanel">
             <form id="jobForm" action="">
 
-                <label for="companyName">Company Namwe</label>
+                <label for="companyName">Company Name</label>
                 <input required type="text" id="companyName" placeholder="LABwork Incorporated">
 
                 <label for="position">Position</label>
                 <input required type="text" id="position" placeholder="Radar Technician">
 
+                <label for="status">Status</label>
                 <select required name="Status" id="status">
                     <option value="NYA">Not Yet Applied</option>
                     <option value="Applied">Applied</option>
@@ -44,15 +52,40 @@
                     <option value="Accepted">Accepted</option>
                 </select>
 
-                <label for="date">Date Applied</label>
+                <div id="statusDetailFields" class="hidden">
+                    <label for="statusDetail">Status Detail</label>
+                    <select id="statusDetail">
+                        <option value="">None</option>
+                    </select>
+                </div>
+
+                <div id="interviewFields" class="hidden">
+                    <label for="interviewRound">Interview Round</label>
+                    <input
+                        type="number"
+                        id="interviewRound"
+                        min="1"
+                        step="1"
+                        placeholder="1"
+                    >
+
+                    <label for="interviewDate">Interview Date</label>
+                    <input type="date" id="interviewDate">
+                </div>
+
+                <label for="dateApplied">Date Applied</label>
                 <input required type="date" id="dateApplied">
 
-                <button type="submit" id="createJobButton">Create Job</button>
+                <label for="notes">Notes</label>
+                <textarea
+                    id="notes"
+                    rows="4"
+                    placeholder="Recruiter notes, interview thoughts, next steps..."
+                ></textarea>
+
+                <button type="submit" id="createJobButton">Save Job</button>
                 <button type="button" id="cancelButton">Cancel</button>
             </form>
-
-
-
         </div>
     </div>
 </body>

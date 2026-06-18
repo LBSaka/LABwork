@@ -164,9 +164,19 @@ def get_applications():
     conn = get_db_connection()
 
     rows = conn.execute("""
-        SELECT id, company, position, status, date_applied
+        SELECT
+            id,
+            company,
+            position,
+            status,
+            status_detail,
+            date_applied,
+            interview_date,
+            interview_round,
+            notes,
+            archived
         FROM applications
-        WHERE user_id = ?
+        WHERE user_id = ? AND archived = 0
         ORDER BY created_at DESC
     """, (session["user_id"],)).fetchall()
 
@@ -181,6 +191,7 @@ def get_applications():
         "applications": applications
     })
 
+
 @app.post("/api/applications")
 @login_required
 def create_application():
@@ -189,7 +200,21 @@ def create_application():
     company = data.get("company", "").strip()
     position = data.get("position", "").strip()
     status = data.get("status", "").strip()
+    status_detail = data.get("statusDetail", "").strip()
     date_applied = data.get("dateApplied", "").strip()
+    interview_date = data.get("interviewDate", "").strip()
+    interview_round = data.get("interviewRound")
+    notes = data.get("notes", "").strip()
+
+    if interview_round == "":
+        interview_round = None
+    else:
+        try:
+            interview_round = int(interview_round)
+        except ValueError:
+            return jsonify({
+                "error": "Interview round must be a number"
+            }), 400
 
     if not company or not position or not status or not date_applied:
         return jsonify({
@@ -199,16 +224,72 @@ def create_application():
     conn = get_db_connection()
 
     cursor = conn.execute("""
-        INSERT INTO applications (user_id, company, position, status, date_applied)
-        VALUES (?, ?, ?, ?, ?)
-    """, (session["user_id"], company, position, status, date_applied))
-
-    conn.commit()
+        INSERT INTO applications (
+            user_id,
+            company,
+            position,
+            status,
+            status_detail,
+            date_applied,
+            interview_date,
+            interview_round,
+            notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        session["user_id"],
+        company,
+        position,
+        status,
+        status_detail,
+        date_applied,
+        interview_date,
+        interview_round,
+        notes
+    ))
 
     new_id = cursor.lastrowid
 
+    create_application_event(
+        conn,
+        new_id,
+        "application_created",
+        date_applied
+    )
+
+    event_type = status_to_event_type(status)
+
+    if event_type is not None:
+        create_application_event(
+            conn,
+            new_id,
+            event_type,
+            date_applied
+        )
+
+    if should_create_interview_event(status, status_detail, interview_round, interview_date):
+        create_application_event(
+            conn,
+            new_id,
+            "interview_scheduled",
+            interview_date,
+            interview_round
+        )
+
+    conn.commit()
+
     row = conn.execute("""
-        SELECT id, company, position, status, date_applied
+        SELECT
+            id,
+            company,
+            position,
+            status,
+            status_detail,
+            date_applied,
+            interview_date,
+            interview_round,
+            notes,
+            archived
         FROM applications
         WHERE id = ? AND user_id = ?
     """, (new_id, session["user_id"])).fetchone()
@@ -227,7 +308,21 @@ def update_application(application_id):
     company = data.get("company", "").strip()
     position = data.get("position", "").strip()
     status = data.get("status", "").strip()
+    status_detail = data.get("statusDetail", "").strip()
     date_applied = data.get("dateApplied", "").strip()
+    interview_date = data.get("interviewDate", "").strip()
+    interview_round = data.get("interviewRound")
+    notes = data.get("notes", "").strip()
+
+    if interview_round == "":
+        interview_round = None
+    else:
+        try:
+            interview_round = int(interview_round)
+        except ValueError:
+            return jsonify({
+                "error": "Interview round must be a number"
+            }), 400
 
     if not company or not position or not status or not date_applied:
         return jsonify({
@@ -236,20 +331,124 @@ def update_application(application_id):
 
     conn = get_db_connection()
 
+    old_row = conn.execute("""
+        SELECT
+            id,
+            status,
+            status_detail,
+            interview_round,
+            interview_date,
+            notes
+        FROM applications
+        WHERE id = ? AND user_id = ?
+    """, (application_id, session["user_id"])).fetchone()
+
+    if old_row is None:
+        conn.close()
+        return jsonify({
+            "error": "Application not found"
+        }), 404
+
+    old_interview_round = old_row["interview_round"]
+    old_interview_date = old_row["interview_date"]
+    old_notes = old_row["notes"] or ""
+
+    old_interview_exists = (
+        old_interview_round is not None or
+        old_interview_date != ""
+    )
+
+    interview_changed = (
+        old_interview_round != interview_round or
+        old_interview_date != interview_date
+    )
+
+    if old_interview_exists and interview_changed:
+        archived_interview_note = (
+            "\n\nPast interview:\n"
+            f"Round: {old_interview_round or 'N/A'}\n"
+            f"Date: {old_interview_date or 'N/A'}"
+        )
+
+        if notes:
+            notes = old_notes + archived_interview_note + "\n\n" + notes
+        else:
+            notes = old_notes + archived_interview_note
+
     conn.execute("""
         UPDATE applications
         SET company = ?,
             position = ?,
             status = ?,
+            status_detail = ?,
             date_applied = ?,
+            interview_date = ?,
+            interview_round = ?,
+            notes = ?,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ? AND user_id = ?
-    """, (company, position, status, date_applied, application_id, session["user_id"]))
+    """, (
+        company,
+        position,
+        status,
+        status_detail,
+        date_applied,
+        interview_date,
+        interview_round,
+        notes,
+        application_id,
+        session["user_id"]
+    ))
+
+    event_type = None
+
+    if old_row["status"] != status:
+        event_type = status_to_event_type(status)
+
+    if event_type is not None:
+        create_application_event(
+            conn,
+            application_id,
+            event_type
+        )
+
+    new_interview_should_be_logged = should_create_interview_event(
+        status,
+        status_detail,
+        interview_round,
+        interview_date
+    )
+
+    interview_is_new_or_changed = (
+        old_row["status"] != status or
+        old_row["status_detail"] != status_detail or
+        old_row["interview_round"] != interview_round or
+        old_row["interview_date"] != interview_date
+    )
+
+    if new_interview_should_be_logged and interview_is_new_or_changed:
+        create_application_event(
+            conn,
+            application_id,
+            "interview_scheduled",
+            interview_date,
+            interview_round
+        )
 
     conn.commit()
 
     row = conn.execute("""
-        SELECT id, company, position, status, date_applied
+        SELECT
+            id,
+            company,
+            position,
+            status,
+            status_detail,
+            date_applied,
+            interview_date,
+            interview_round,
+            notes,
+            archived
         FROM applications
         WHERE id = ? AND user_id = ?
     """, (application_id, session["user_id"])).fetchone()
@@ -264,7 +463,6 @@ def update_application(application_id):
     return jsonify({
         "application": application_to_dict(row)
     })
-
 
 @app.delete("/api/applications/<int:application_id>")
 @login_required
@@ -288,7 +486,29 @@ def delete_application(application_id):
         "ok": True
     })
 
+@app.post("/api/applications/<int:application_id>/archive")
+@login_required
+def archive_application(application_id):
+    conn = get_db_connection()
 
+    cursor = conn.execute("""
+        UPDATE applications
+        SET archived = 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND user_id = ?
+    """, (application_id, session["user_id"]))
+
+    conn.commit()
+    conn.close()
+
+    if cursor.rowcount == 0:
+        return jsonify({
+            "error": "Application not found"
+        }), 404
+
+    return jsonify({
+        "ok": True
+    })
 
 def get_db_connection():
     conn = sqlite3.connect(DB_NAME)
@@ -313,12 +533,31 @@ def init_db():
             company TEXT NOT NULL,
             position TEXT NOT NULL,
             status TEXT NOT NULL,
+            status_detail TEXT DEFAULT '',
             date_applied TEXT NOT NULL,
+            interview_date TEXT DEFAULT '',
+            interview_round INTEGER,
+            notes TEXT DEFAULT '',
+            archived INTEGER DEFAULT 0,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         )
     """)
-
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS application_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            application_id INTEGER NOT NULL,
+            event_type TEXT NOT NULL,
+            event_date TEXT,
+            interview_round INTEGER,
+            notes TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (application_id) REFERENCES applications(id)
+        )
+    """)
     conn.commit()
     conn.close()
 
@@ -328,8 +567,50 @@ def application_to_dict(row):
         "company": row["company"],
         "position": row["position"],
         "status": row["status"],
-        "dateApplied": row["date_applied"]
+        "statusDetail": row["status_detail"],
+        "dateApplied": row["date_applied"],
+        "interviewDate": row["interview_date"],
+        "interviewRound": row["interview_round"],
+        "notes": row["notes"],
+        "archived": row["archived"]
     }
+
+def create_application_event(conn, application_id, event_type, event_date=None, interview_round=None, notes=""):
+    conn.execute("""
+        INSERT INTO application_events (
+            user_id,
+            application_id,
+            event_type,
+            event_date,
+            interview_round,
+            notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        session["user_id"],
+        application_id,
+        event_type,
+        event_date,
+        interview_round,
+        notes
+    ))
+
+def should_create_interview_event(status, status_detail, interview_round, interview_date):
+    return (
+        status == "Applied" and
+        status_detail == "Interview Scheduled" and
+        interview_round is not None and
+        interview_date != ""
+    )
+
+def status_to_event_type(status):
+    event_map = {
+        "Applied": "application_submitted",
+        "Rejected": "rejected",
+        "Accepted": "offer_received"
+    }
+
+    return event_map.get(status)
 
 init_db()
 

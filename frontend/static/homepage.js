@@ -7,20 +7,88 @@ const jobTable = document.getElementById("jobTable");
 const newApplicationButton = document.getElementById("newApplicationButton")
 const jobFormOverlay = document.getElementById("jobFormOverlay")
 const cancelButton = document.getElementById("cancelButton");
+const statusDetailFields = document.getElementById("statusDetailFields");
+const statusDetail = document.getElementById("statusDetail");
+const interviewFields = document.getElementById("interviewFields");
+const interviewRound = document.getElementById("interviewRound");
+const interviewDate = document.getElementById("interviewDate");
+const notes = document.getElementById("notes");
+
 let jobs = [];
 let editingJobId = null;
+const statusDetailOptions = {
+    Applied: [
+        "Awaiting Reply",
+        "Follow-up Needed",
+        "Interview Scheduled"
+    ]
+};
 
+
+status.addEventListener("change", function() {
+    updateStatusDetailOptions();
+});
+
+statusDetail.addEventListener("change", updateInterviewFieldVisibility);
 newApplicationButton.addEventListener("click", function() {
     handleOpenForm("create");
 });
 cancelButton.addEventListener("click", handleCloseForm);
 jobForm.addEventListener("submit", handleSubmitJob);
+
+function updateStatusDetailOptions(selectedDetail = "") {
+    const selectedStatus = status.value;
+
+    if (selectedStatus !== "Applied") {
+        statusDetailFields.classList.add("hidden");
+        statusDetail.innerHTML = "<option value=''>None</option>";
+        statusDetail.value = "";
+        updateInterviewFieldVisibility();
+        return;
+    }
+
+    statusDetailFields.classList.remove("hidden");
+
+    const options = statusDetailOptions[selectedStatus] || [];
+
+    statusDetail.innerHTML = "<option value=''>None</option>";
+
+    options.forEach(function(optionText) {
+        const option = document.createElement("option");
+        option.value = optionText;
+        option.textContent = optionText;
+
+        if (optionText === selectedDetail) {
+            option.selected = true;
+        }
+
+        statusDetail.appendChild(option);
+    });
+
+    updateInterviewFieldVisibility();
+}
+
+function updateInterviewFieldVisibility() {
+    const shouldShowInterviewFields =
+        status.value === "Applied" &&
+        statusDetail.value === "Interview Scheduled";
+
+    if (shouldShowInterviewFields) {
+        interviewFields.classList.remove("hidden");
+    } else {
+        interviewFields.classList.add("hidden");
+        interviewRound.value = "";
+        interviewDate.value = "";
+    }
+}
+
 function handleOpenForm(mode, job = null) {
     jobFormOverlay.classList.remove("hidden");
 
     if (mode === "create") {
         editingJobId = null;
         jobForm.reset();
+        updateStatusDetailOptions();
         return;
     }
 
@@ -31,6 +99,11 @@ function handleOpenForm(mode, job = null) {
         position.value = job.position;
         status.value = job.status;
         dateApplied.value = job.dateApplied;
+        updateStatusDetailOptions(job.statusDetail);
+
+        interviewRound.value = job.interviewRound || "";
+        interviewDate.value = job.interviewDate || "";
+        notes.value = job.notes || "";
     }
 
 
@@ -42,6 +115,8 @@ function handleCloseForm() {
     jobFormOverlay.classList.add("hidden");
     jobForm.reset();
     editingJobId = null;
+    updateStatusDetailOptions();
+
 }
 
 async function loadApplications() {
@@ -97,6 +172,27 @@ async function updateApplication(id, payload) {
     return data.application;
 }
 
+async function archiveJob(id) {
+    const confirmed = confirm("Archive this application?");
+
+    if (!confirmed) {
+        return;
+    }
+
+    const res = await fetch("/api/applications/" + id + "/archive", {
+        method: "POST"
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        alert(data.error || "Failed to archive application");
+        return;
+    }
+
+    await loadApplications();
+}
+
 async function deleteJob(id) {
     const res = await fetch("/api/applications/" + id, {
         method: "DELETE"
@@ -144,7 +240,11 @@ function getJobFormData() {
         company: companyName.value.trim(),
         position: position.value.trim(),
         status: status.value,
-        dateApplied: dateApplied.value
+        statusDetail: statusDetail.value,
+        dateApplied: dateApplied.value,
+        interviewRound: interviewRound.value,
+        interviewDate: interviewDate.value,
+        notes: notes.value.trim()
     };
 }
 
@@ -154,35 +254,61 @@ function renderJobs(jobsToRender) {
 }
 
 function renderJobRow(job) {
-    const row = document.createElement("tr");
+    const summaryRow = document.createElement("tr");
+    const detailsRow = document.createElement("tr");
 
-    row.innerHTML =
+    summaryRow.innerHTML =
         "<td>" + job.company + "</td>" +
         "<td>" + job.position + "</td>" +
         "<td>" + job.status + "</td>" +
         "<td>" + job.dateApplied + "</td>";
 
+    detailsRow.classList.add("hidden");
+
+    detailsRow.innerHTML =
+        "<td colspan='4'>" +
+            "<div class='jobDetails'>" +
+                "<p><strong>Status Detail:</strong> " + (job.statusDetail || "None") + "</p>" +
+                "<p><strong>Interview Round:</strong> " + (job.interviewRound || "None") + "</p>" +
+                "<p><strong>Interview Date:</strong> " + (job.interviewDate || "None") + "</p>" +
+                "<p><strong>Notes:</strong> " + (job.notes || "None") + "</p>" +
+            "</div>" +
+        "</td>";
+
+    const detailsBox = detailsRow.querySelector(".jobDetails");
+
     const editButton = document.createElement("button");
     editButton.textContent = "Edit";
-    editButton.addEventListener("click", function() {
+    editButton.addEventListener("click", function(event) {
+        event.stopPropagation();
         editJob(job.id);
     });
 
-    const editCell = document.createElement("td");
-    editCell.appendChild(editButton);
-    row.appendChild(editCell);
-
     const deleteButton = document.createElement("button");
     deleteButton.textContent = "Delete";
-    deleteButton.addEventListener("click", function() {
+    deleteButton.addEventListener("click", function(event) {
+        event.stopPropagation();
         deleteJob(job.id);
     });
 
-    const deleteCell = document.createElement("td");
-    deleteCell.appendChild(deleteButton);
-    row.appendChild(deleteCell);
+    const archiveButton = document.createElement("button");
+    archiveButton.textContent = "Archive";
+    archiveButton.addEventListener("click", function(event) {
+        event.stopPropagation();
+        archiveJob(job.id);
+    });
 
-    jobTable.appendChild(row);
+    detailsBox.appendChild(editButton);
+    detailsBox.appendChild(deleteButton);
+    detailsBox.appendChild(archiveButton);
+
+    summaryRow.addEventListener("click", function() {
+        detailsRow.classList.toggle("hidden");
+    });
+
+    jobTable.appendChild(summaryRow);
+    jobTable.appendChild(detailsRow);
 }
 
+updateStatusDetailOptions();
 loadApplications();
