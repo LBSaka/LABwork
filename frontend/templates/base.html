@@ -5,37 +5,92 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LABwork</title>
-    <link rel="stylesheet" href="../static/styles.css">
+
+    <script>
+        const savedTheme = localStorage.getItem("labworkTheme") || "light";
+        document.documentElement.dataset.theme = savedTheme;
+    </script>
+
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/settings.js"></script>
 </head>
 
 <body>
-    <h1>LABwork</h1>
-    <h2>By Luke A Busacca</h2>
-    <hr>
-    <ul class="navBar">
-        <li><a href="applications.html">My Applications</a></li>
-        <li><a href="profile.html">Profile</a></li>
-        <li><a>SUSUME Progress Tracker</a></li>
-    </ul>
-    <div class="profileDisplay">
-        <h2>Sign In</h2>
+    <header class="appNav">
+        <div class="appNavBrand">
+            <a href="/">LABwork</a>
+        </div>
 
-        <form id="loginForm">
-            <label for="loginUsername">Username</label>
-            <input id="loginUsername" type="text" required>
+        <nav class="appNavLinks">
+            <a href="/applications.html" data-i18n="myApplications">My Applications</a>
+            <a href="/profile.html" data-i18n="profile">Profile</a>
+        </nav>
 
-            <label for="loginPassword">Password</label>
-            <input id="loginPassword" type="password" required>
+        <div class="settingsControls">
+            <button id="themeToggle" type="button">Dark</button>
+            <button id="languageToggle" type="button">日本語</button>
+        </div>
+    </header>
 
-            <button type="submit">Sign In</button>
-        </form>
-        <button id="demoLoginButton" type="button">Try Demo as John LABwork</button>
-        <p>No account yet? <a href="/signup.html">Create one</a></p>
-    </div>
+    <main class="landingPage">
+        <section class="heroSection">
+            <div class="heroText">
+                <p class="eyebrow" data-i18n="landingEyebrow">Job hunting, organized.</p>
+
+                <h1>LABwork</h1>
+
+                <p class="heroSubtitle" data-i18n="landingSubtitle">
+                    Track applications, interviews, notes, and progress in one clean workspace.
+                </p>
+
+                <div class="heroActions">
+                    <a class="primaryLinkButton" href="/applications.html" data-i18n="openApplications">
+                        Open Applications
+                    </a>
+                    <button id="demoLoginButton" class="secondaryButton" type="button" data-i18n="tryDemo">
+                        Try Demo as John LABWORK
+                    </button>
+                </div>
+            </div>
+
+            <div class="heroCard">
+                <h2 data-i18n="whyLabwork">Why LABwork?</h2>
+
+                <ul class="featureList">
+                    <li data-i18n="featureTrack">Track every company and role you apply to.</li>
+                    <li data-i18n="featureInterviews">Save interview dates, rounds, and notes.</li>
+                    <li data-i18n="featureProgress">See your job search progress clearly.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="loginSection">
+            <div class="profileDisplay loginCard">
+                <h2 data-i18n="signIn">Sign In</h2>
+
+                <form id="loginForm">
+                    <label for="loginUsername" data-i18n="username">Username</label>
+                    <input id="loginUsername" type="text" required>
+
+                    <label for="loginPassword" data-i18n="password">Password</label>
+                    <input id="loginPassword" type="password" required>
+
+                    <button type="submit" data-i18n="signIn">Sign In</button>
+                </form>
+
+                <p class="signupPrompt">
+                    <span data-i18n="noAccount">No account yet?</span>
+                    <a href="/signup.html" data-i18n="createOne">Create one</a>
+                </p>
+            </div>
+        </section>
+
+        <section class="statusNote">
+            <p data-i18n="workInProgress">MVP Demo — Core features live.</p>
+        </section>
+    </main>
 
     <script src="/static/auth.js"></script>
-    <br>
-    <p>This is a Work in progress</p>
 </body>
 
 </html>

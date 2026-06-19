@@ -1,10 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile / Settings - LABwork</title>
+
+    <script>
+        const savedTheme = localStorage.getItem("labworkTheme") || "light";
+        document.documentElement.dataset.theme = savedTheme;
+    </script>
+
     <link rel="stylesheet" href="/static/styles.css">
+
+    <script src="/static/settings.js"></script>
     <script src="/static/account.js" defer></script>
     <script src="/static/profile.js" defer></script>
 </head>
@@ -16,54 +25,95 @@
         </div>
 
         <nav class="appNavLinks">
-            <a href="/">Landing</a>
-            <a href="/applications.html">Applications</a>
-            <a href="/profile.html">Profile / Settings</a>
+            <a href="/" data-i18n="landing">Landing</a>
+            <a href="/applications.html" data-i18n="applications">Applications</a>
+            <a href="/profile.html" data-i18n="profileSettings">Profile / Settings</a>
         </nav>
 
         <div class="appNavAccount">
-            <span id="currentUserDisplay">Checking login...</span>
-            <button id="logoutButton" type="button">Logout</button>
+            <span id="currentUserDisplay" data-i18n="checkingLogin">Checking login...</span>
+            <button id="logoutButton" type="button" data-i18n="logout">Logout</button>
+        </div>
+
+        <div class="settingsControls">
+            <button id="themeToggle" type="button">Dark</button>
+            <button id="languageToggle" type="button">日本語</button>
         </div>
     </header>
 
-    <main class="profileDisplay">
-        <h1>Profile / Settings</h1>
-
-        <section>
-            <h2>Account</h2>
-            <p><strong>Username:</strong> <span id="profileUsername">Loading...</span></p>
+    <main class="settingsPage">
+        <section class="settingsHero">
+            <p class="eyebrow" data-i18n="profileSettings">Profile / Settings</p>
+            <h1 data-i18n="settingsCenter">Settings Center</h1>
+            <p class="pageSubtitle" data-i18n="settingsSubtitle">
+                Manage your account, display preferences, and LABwork workspace settings.
+            </p>
         </section>
 
-        <hr>
+        <section class="settingsGrid">
+            <article class="settingsCard">
+                <div class="cardHeader">
+                    <div>
+                        <p class="cardKicker" data-i18n="account">Account</p>
+                        <h2 data-i18n="profile">Profile</h2>
+                    </div>
+                </div>
 
-        <section>
-            <h2>Settings</h2>
+                <div class="accountRow">
+                    <span class="accountLabel" data-i18n="username">Username</span>
+                    <span id="profileUsername" class="accountValue" data-i18n="loading">Loading...</span>
+                </div>
+            </article>
 
-            <form id="settingsForm">
-                <label for="languageSetting">Language</label>
-                <select id="languageSetting">
-                    <option value="en">English</option>
-                    <option value="ja">日本語</option>
-                </select>
+            <article class="settingsCard">
+                <div class="cardHeader">
+                    <div>
+                        <p class="cardKicker" data-i18n="settings">Settings</p>
+                        <h2 data-i18n="workspacePreferences">Workspace Preferences</h2>
+                    </div>
+                </div>
 
-                <label for="themeSetting">Theme</label>
-                <select id="themeSetting">
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                </select>
+                <form id="settingsForm" class="settingsForm">
+                    <div class="fieldGroup">
+                        <label for="languageSetting" data-i18n="language">Language</label>
+                        <select id="languageSetting">
+                            <option value="en" data-i18n="englishMode">English</option>
+                            <option value="ja" data-i18n="japaneseMode">日本語</option>
+                        </select>
+                    </div>
 
-                <button type="submit">Save Settings</button>
-            </form>
-        </section>
+                    <div class="fieldGroup">
+                        <label for="themeSetting" data-i18n="theme">Theme</label>
+                        <select id="themeSetting">
+                            <option value="light" data-i18n="lightMode">Light</option>
+                            <option value="dark" data-i18n="darkMode">Dark</option>
+                        </select>
+                    </div>
 
-        <hr>
+                    <button type="submit" class="primaryActionButton" data-i18n="saveSettings">
+                        Save Settings
+                    </button>
+                </form>
+            </article>
 
-        <section>
-            <h2>Danger Zone</h2>
-            <p>Delete your account and all saved applications. This will be permanent.</p>
-            <button id="deleteAccountButton" type="button">Delete Account</button>
+            <article class="settingsCard dangerCard">
+                <div class="cardHeader">
+                    <div>
+                        <p class="cardKicker" data-i18n="dangerZone">Danger Zone</p>
+                        <h2 data-i18n="deleteAccount">Delete Account</h2>
+                    </div>
+                </div>
+
+                <p data-i18n="deleteAccountWarning">
+                    Delete your account and all saved applications. This will be permanent.
+                </p>
+
+                <button id="deleteAccountButton" type="button" class="dangerButton" data-i18n="deleteAccount">
+                    Delete Account
+                </button>
+            </article>
         </section>
     </main>
 </body>
+
 </html>

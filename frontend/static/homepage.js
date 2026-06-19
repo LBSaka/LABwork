@@ -4,9 +4,10 @@ const position = document.getElementById("position");
 const status = document.getElementById("status");
 const dateApplied = document.getElementById("dateApplied");
 const jobTable = document.getElementById("jobTable");
-const newApplicationButton = document.getElementById("newApplicationButton")
-const jobFormOverlay = document.getElementById("jobFormOverlay")
+const newApplicationButton = document.getElementById("newApplicationButton");
+const jobFormOverlay = document.getElementById("jobFormOverlay");
 const cancelButton = document.getElementById("cancelButton");
+const cancelButtonBottom = document.getElementById("cancelButtonBottom");
 const statusDetailFields = document.getElementById("statusDetailFields");
 const statusDetail = document.getElementById("statusDetail");
 const interviewFields = document.getElementById("interviewFields");
@@ -21,32 +22,73 @@ let jobs = [];
 let editingJobId = null;
 let sortField = "dateApplied";
 let sortDirection = "desc";
+
 const statusDetailOptions = {
     Applied: [
-        "Awaiting Reply",
-        "Follow-up Needed",
-        "Interview Scheduled"
+        {
+            value: "Awaiting Reply",
+            labelKey: "awaitingReply"
+        },
+        {
+            value: "Follow-up Needed",
+            labelKey: "followUpNeeded"
+        },
+        {
+            value: "Interview Scheduled",
+            labelKey: "interviewScheduled"
+        }
     ]
 };
 
+function t(key) {
+    if (window.LABWORK && typeof window.LABWORK.t === "function") {
+        return window.LABWORK.t(key);
+    }
 
-status.addEventListener("change", function () {
-    updateStatusDetailOptions();
-});
+    return key;
+}
 
-statusDetail.addEventListener("change", updateInterviewFieldVisibility);
-newApplicationButton.addEventListener("click", function () {
-    handleOpenForm("create");
-});
-cancelButton.addEventListener("click", handleCloseForm);
-jobForm.addEventListener("submit", handleSubmitJob);
+function statusLabel(statusValue) {
+    if (window.LABWORK && typeof window.LABWORK.statusLabel === "function") {
+        return window.LABWORK.statusLabel(statusValue);
+    }
+
+    return statusValue || "";
+}
+
+function detailLabel(detailValue) {
+    if (window.LABWORK && typeof window.LABWORK.detailLabel === "function") {
+        return window.LABWORK.detailLabel(detailValue);
+    }
+
+    return detailValue || "None";
+}
+
+function escapeHtml(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
 
 function updateStatusDetailOptions(selectedDetail = "") {
+    if (!status || !statusDetail || !statusDetailFields) {
+        return;
+    }
+
     const selectedStatus = status.value;
+
+    statusDetail.innerHTML = "";
+
+    const noneOption = document.createElement("option");
+    noneOption.value = "";
+    noneOption.textContent = t("none");
+    statusDetail.appendChild(noneOption);
 
     if (selectedStatus !== "Applied") {
         statusDetailFields.classList.add("hidden");
-        statusDetail.innerHTML = "<option value=''>None</option>";
         statusDetail.value = "";
         updateInterviewFieldVisibility();
         return;
@@ -56,14 +98,12 @@ function updateStatusDetailOptions(selectedDetail = "") {
 
     const options = statusDetailOptions[selectedStatus] || [];
 
-    statusDetail.innerHTML = "<option value=''>None</option>";
-
-    options.forEach(function (optionText) {
+    options.forEach(function (optionData) {
         const option = document.createElement("option");
-        option.value = optionText;
-        option.textContent = optionText;
+        option.value = optionData.value;
+        option.textContent = t(optionData.labelKey);
 
-        if (optionText === selectedDetail) {
+        if (optionData.value === selectedDetail) {
             option.selected = true;
         }
 
@@ -74,6 +114,10 @@ function updateStatusDetailOptions(selectedDetail = "") {
 }
 
 function updateInterviewFieldVisibility() {
+    if (!status || !statusDetail || !interviewFields || !interviewRound || !interviewDate) {
+        return;
+    }
+
     const shouldShowInterviewFields =
         status.value === "Applied" &&
         statusDetail.value === "Interview Scheduled";
@@ -88,6 +132,10 @@ function updateInterviewFieldVisibility() {
 }
 
 function handleOpenForm(mode, job = null) {
+    if (!jobFormOverlay || !jobForm) {
+        return;
+    }
+
     jobFormOverlay.classList.remove("hidden");
 
     if (mode === "create") {
@@ -100,28 +148,27 @@ function handleOpenForm(mode, job = null) {
     if (mode === "edit" && job !== null) {
         editingJobId = job.id;
 
-        companyName.value = job.company;
-        position.value = job.position;
-        status.value = job.status;
-        dateApplied.value = job.dateApplied;
-        updateStatusDetailOptions(job.statusDetail);
+        companyName.value = job.company || "";
+        position.value = job.position || "";
+        status.value = job.status || "NYA";
+        dateApplied.value = job.dateApplied || "";
+        updateStatusDetailOptions(job.statusDetail || "");
 
         interviewRound.value = job.interviewRound || "";
         interviewDate.value = job.interviewDate || "";
         notes.value = job.notes || "";
     }
-
-
 }
 
-
-
 function handleCloseForm() {
+    if (!jobFormOverlay || !jobForm) {
+        return;
+    }
+
     jobFormOverlay.classList.add("hidden");
     jobForm.reset();
     editingJobId = null;
     updateStatusDetailOptions();
-
 }
 
 async function loadApplications() {
@@ -134,11 +181,11 @@ async function loadApplications() {
     }
 
     if (!res.ok) {
-        console.error(data.error || "Failed to load applications");
+        console.error(data.error || t("failedToLoadApplications"));
         return;
     }
 
-    jobs = data.applications;
+    jobs = data.applications || [];
     applyFiltersAndSort();
 }
 
@@ -154,11 +201,12 @@ async function createApplication(payload) {
     const data = await res.json();
 
     if (!res.ok) {
-        throw new Error(data.error || "Failed to create application");
+        throw new Error(data.error || t("failedToCreateApplication"));
     }
 
     return data.application;
 }
+
 async function updateApplication(id, payload) {
     const res = await fetch("/api/applications/" + id, {
         method: "PUT",
@@ -171,14 +219,14 @@ async function updateApplication(id, payload) {
     const data = await res.json();
 
     if (!res.ok) {
-        throw new Error(data.error || "Failed to update application");
+        throw new Error(data.error || t("failedToUpdateApplication"));
     }
 
     return data.application;
 }
 
 async function archiveJob(id) {
-    const confirmed = confirm("Archive this application?");
+    const confirmed = confirm(t("archiveConfirm"));
 
     if (!confirmed) {
         return;
@@ -191,7 +239,7 @@ async function archiveJob(id) {
     const data = await res.json();
 
     if (!res.ok) {
-        alert(data.error || "Failed to archive application");
+        alert(data.error || t("failedToArchiveApplication"));
         return;
     }
 
@@ -206,7 +254,7 @@ async function deleteJob(id) {
     const data = await res.json();
 
     if (!res.ok) {
-        console.error(data.error || "Failed to delete application");
+        alert(data.error || t("failedToDeleteApplication"));
         return;
     }
 
@@ -218,14 +266,18 @@ async function handleSubmitJob(event) {
 
     const formData = getJobFormData();
 
-    if (editingJobId === null) {
-        await createApplication(formData);
-    } else {
-        await updateApplication(editingJobId, formData);
-    }
+    try {
+        if (editingJobId === null) {
+            await createApplication(formData);
+        } else {
+            await updateApplication(editingJobId, formData);
+        }
 
-    await loadApplications();
-    handleCloseForm();
+        await loadApplications();
+        handleCloseForm();
+    } catch (error) {
+        alert(error.message);
+    }
 }
 
 function editJob(id) {
@@ -254,6 +306,10 @@ function getJobFormData() {
 }
 
 function applyFiltersAndSort() {
+    if (!jobTable) {
+        return;
+    }
+
     const searchText = applicationSearch
         ? applicationSearch.value.trim().toLowerCase()
         : "";
@@ -262,13 +318,13 @@ function applyFiltersAndSort() {
         ? statusFilter.value
         : "";
 
-    let filteredJobs = jobs.filter(function(job) {
-        const company = job.company.toLowerCase();
-        const position = job.position.toLowerCase();
+    let filteredJobs = jobs.filter(function (job) {
+        const jobCompany = String(job.company || "").toLowerCase();
+        const jobPosition = String(job.position || "").toLowerCase();
 
         const matchesSearch =
-            company.includes(searchText) ||
-            position.includes(searchText);
+            jobCompany.includes(searchText) ||
+            jobPosition.includes(searchText);
 
         const matchesStatus =
             selectedStatus === "" ||
@@ -277,13 +333,13 @@ function applyFiltersAndSort() {
         return matchesSearch && matchesStatus;
     });
 
-    filteredJobs.sort(function(a, b) {
-        let aValue = a[sortField];
-        let bValue = b[sortField];
+    filteredJobs.sort(function (a, b) {
+        let aValue = a[sortField] || "";
+        let bValue = b[sortField] || "";
 
         if (sortField === "dateApplied") {
-            aValue = new Date(aValue);
-            bValue = new Date(bValue);
+            aValue = aValue ? new Date(aValue) : new Date(0);
+            bValue = bValue ? new Date(bValue) : new Date(0);
         } else {
             aValue = String(aValue).toLowerCase();
             bValue = String(bValue).toLowerCase();
@@ -300,15 +356,23 @@ function applyFiltersAndSort() {
         return 0;
     });
 
-    console.log("Rendering filtered jobs:", filteredJobs.length, "sort:", sortField, sortDirection);
-
     updateSortHeaders();
     renderJobs(filteredJobs);
 }
 
+function getHeaderLabel(header) {
+    const labelKey = header.dataset.labelKey;
+
+    if (labelKey) {
+        return t(labelKey);
+    }
+
+    return header.dataset.label || header.textContent;
+}
+
 function updateSortHeaders() {
-    sortableHeaders.forEach(function(header) {
-        const label = header.dataset.label;
+    sortableHeaders.forEach(function (header) {
+        const label = getHeaderLabel(header);
         const field = header.dataset.sort;
 
         if (field !== sortField) {
@@ -323,69 +387,29 @@ function updateSortHeaders() {
         }
     });
 }
+
 function setupSortAndFilterControls() {
-    if (applicationSearch !== null) {
-        applicationSearch.addEventListener("input", function() {
-            console.log("Search changed:", applicationSearch.value);
-            applyFiltersAndSort();
-        });
-    } else {
-        console.log("applicationSearch not found");
+    if (applicationSearch) {
+        applicationSearch.addEventListener("input", applyFiltersAndSort);
     }
 
-    if (statusFilter !== null) {
-        statusFilter.addEventListener("change", function() {
-            console.log("Status filter changed:", statusFilter.value);
-            applyFiltersAndSort();
-        });
-    } else {
-        console.log("statusFilter not found");
+    if (statusFilter) {
+        statusFilter.addEventListener("change", applyFiltersAndSort);
     }
 
-    console.log("Sortable headers found:", sortableHeaders.length);
-
-    sortableHeaders.forEach(function(header) {
-        header.addEventListener("click", function() {
+    sortableHeaders.forEach(function (header) {
+        header.addEventListener("click", function () {
             const clickedField = header.dataset.sort;
 
-            console.log("Header clicked:", clickedField);
-
             if (sortField === clickedField) {
-                if (sortDirection === "asc") {
-                    sortDirection = "desc";
-                } else {
-                    sortDirection = "asc";
-                }
+                sortDirection = sortDirection === "asc" ? "desc" : "asc";
             } else {
                 sortField = clickedField;
-
-                if (sortField === "dateApplied") {
-                    sortDirection = "desc";
-                } else {
-                    sortDirection = "asc";
-                }
+                sortDirection = sortField === "dateApplied" ? "desc" : "asc";
             }
 
             applyFiltersAndSort();
         });
-    });
-}
-
-function updateSortHeaders() {
-    sortableHeaders.forEach(function(header) {
-        const label = header.dataset.label;
-        const field = header.dataset.sort;
-
-        if (field !== sortField) {
-            header.textContent = label;
-            return;
-        }
-
-        if (sortDirection === "asc") {
-            header.textContent = label + " ↑";
-        } else {
-            header.textContent = label + " ↓";
-        }
     });
 }
 
@@ -399,41 +423,41 @@ function renderJobRow(job) {
     const detailsRow = document.createElement("tr");
 
     summaryRow.innerHTML =
-        "<td>" + job.company + "</td>" +
-        "<td>" + job.position + "</td>" +
-        "<td>" + job.status + "</td>" +
-        "<td>" + job.dateApplied + "</td>";
+        "<td>" + escapeHtml(job.company) + "</td>" +
+        "<td>" + escapeHtml(job.position) + "</td>" +
+        "<td>" + escapeHtml(statusLabel(job.status)) + "</td>" +
+        "<td>" + escapeHtml(job.dateApplied) + "</td>";
 
     detailsRow.classList.add("hidden");
 
     detailsRow.innerHTML =
         "<td colspan='4'>" +
         "<div class='jobDetails'>" +
-        "<p><strong>Status Detail:</strong> " + (job.statusDetail || "None") + "</p>" +
-        "<p><strong>Interview Round:</strong> " + (job.interviewRound || "None") + "</p>" +
-        "<p><strong>Interview Date:</strong> " + (job.interviewDate || "None") + "</p>" +
-        "<p><strong>Notes:</strong> " + (job.notes || "None") + "</p>" +
+        "<p><strong>" + escapeHtml(t("statusDetail")) + ":</strong> " + escapeHtml(detailLabel(job.statusDetail || "")) + "</p>" +
+        "<p><strong>" + escapeHtml(t("interviewRound")) + ":</strong> " + escapeHtml(job.interviewRound || t("none")) + "</p>" +
+        "<p><strong>" + escapeHtml(t("interviewDate")) + ":</strong> " + escapeHtml(job.interviewDate || t("none")) + "</p>" +
+        "<p><strong>" + escapeHtml(t("notes")) + ":</strong> " + escapeHtml(job.notes || t("none")) + "</p>" +
         "</div>" +
         "</td>";
 
     const detailsBox = detailsRow.querySelector(".jobDetails");
 
     const editButton = document.createElement("button");
-    editButton.textContent = "Edit";
+    editButton.textContent = t("edit");
     editButton.addEventListener("click", function (event) {
         event.stopPropagation();
         editJob(job.id);
     });
 
     const deleteButton = document.createElement("button");
-    deleteButton.textContent = "Delete";
+    deleteButton.textContent = t("delete");
     deleteButton.addEventListener("click", function (event) {
         event.stopPropagation();
         deleteJob(job.id);
     });
 
     const archiveButton = document.createElement("button");
-    archiveButton.textContent = "Archive";
+    archiveButton.textContent = t("archive");
     archiveButton.addEventListener("click", function (event) {
         event.stopPropagation();
         archiveJob(job.id);
@@ -450,6 +474,39 @@ function renderJobRow(job) {
     jobTable.appendChild(summaryRow);
     jobTable.appendChild(detailsRow);
 }
+
+if (status) {
+    status.addEventListener("change", function () {
+        updateStatusDetailOptions();
+    });
+}
+
+if (statusDetail) {
+    statusDetail.addEventListener("change", updateInterviewFieldVisibility);
+}
+
+if (newApplicationButton) {
+    newApplicationButton.addEventListener("click", function () {
+        handleOpenForm("create");
+    });
+}
+
+if (cancelButton) {
+    cancelButton.addEventListener("click", handleCloseForm);
+}
+
+if (cancelButtonBottom) {
+    cancelButtonBottom.addEventListener("click", handleCloseForm);
+}
+
+if (jobForm) {
+    jobForm.addEventListener("submit", handleSubmitJob);
+}
+
+document.addEventListener("labwork:languagechange", function () {
+    updateStatusDetailOptions(statusDetail ? statusDetail.value : "");
+    applyFiltersAndSort();
+});
 
 setupSortAndFilterControls();
 updateStatusDetailOptions();

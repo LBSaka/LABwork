@@ -2,8 +2,16 @@ const loginForm = document.getElementById("loginForm");
 const signupForm = document.getElementById("signupForm");
 const demoLoginButton = document.getElementById("demoLoginButton");
 
+function t(key) {
+    if (window.LABWORK && typeof window.LABWORK.t === "function") {
+        return window.LABWORK.t(key);
+    }
+
+    return key;
+}
+
 if (loginForm) {
-    loginForm.addEventListener("submit", async function(event) {
+    loginForm.addEventListener("submit", async function (event) {
         event.preventDefault();
 
         const res = await fetch("/api/login", {
@@ -20,7 +28,7 @@ if (loginForm) {
         const data = await res.json();
 
         if (!res.ok) {
-            alert(data.error || "Login failed");
+            alert(data.error || t("loginFailed"));
             return;
         }
 
@@ -29,7 +37,7 @@ if (loginForm) {
 }
 
 if (signupForm) {
-    signupForm.addEventListener("submit", async function(event) {
+    signupForm.addEventListener("submit", async function (event) {
         event.preventDefault();
 
         const res = await fetch("/api/signup", {
@@ -46,15 +54,16 @@ if (signupForm) {
         const data = await res.json();
 
         if (!res.ok) {
-            alert(data.error || "Signup failed");
+            alert(data.error || t("signupFailed"));
             return;
         }
 
         window.location.href = "/applications.html";
     });
 }
+
 if (demoLoginButton) {
-    demoLoginButton.addEventListener("click", async function() {
+    demoLoginButton.addEventListener("click", async function () {
         const res = await fetch("/api/demo-login", {
             method: "POST"
         });
@@ -62,7 +71,7 @@ if (demoLoginButton) {
         const data = await res.json();
 
         if (!res.ok) {
-            alert(data.error || "Demo login failed");
+            alert(data.error || t("demoLoginFailed"));
             return;
         }
 

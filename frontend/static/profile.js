@@ -4,6 +4,24 @@ const languageSetting = document.getElementById("languageSetting");
 const themeSetting = document.getElementById("themeSetting");
 const deleteAccountButton = document.getElementById("deleteAccountButton");
 
+function t(key) {
+    if (window.LABWORK && typeof window.LABWORK.t === "function") {
+        return window.LABWORK.t(key);
+    }
+
+    return key;
+}
+
+function syncSettingsForm() {
+    if (languageSetting && window.LABWORK) {
+        languageSetting.value = window.LABWORK.getLanguage();
+    }
+
+    if (themeSetting && window.LABWORK) {
+        themeSetting.value = window.LABWORK.getTheme();
+    }
+}
+
 async function loadProfilePage() {
     const res = await fetch("/api/me");
     const data = await res.json();
@@ -13,31 +31,53 @@ async function loadProfilePage() {
         return;
     }
 
-    profileUsername.textContent = data.user.username;
-
-    const savedLanguage = localStorage.getItem("labworkLanguage");
-    const savedTheme = localStorage.getItem("labworkTheme");
-
-    if (savedLanguage) {
-        languageSetting.value = savedLanguage;
+    if (profileUsername) {
+        profileUsername.textContent = data.user.username;
     }
 
-    if (savedTheme) {
-        themeSetting.value = savedTheme;
-    }
+    syncSettingsForm();
 }
 
-settingsForm.addEventListener("submit", function(event) {
-    event.preventDefault();
+if (settingsForm) {
+    settingsForm.addEventListener("submit", function (event) {
+        event.preventDefault();
 
-    localStorage.setItem("labworkLanguage", languageSetting.value);
-    localStorage.setItem("labworkTheme", themeSetting.value);
+        if (window.LABWORK) {
+            window.LABWORK.setLanguage(languageSetting.value);
+            window.LABWORK.setTheme(themeSetting.value);
+        } else {
+            localStorage.setItem("labworkLanguage", languageSetting.value);
+            localStorage.setItem("labworkTheme", themeSetting.value);
+        }
 
-    alert("Settings saved locally for now.");
-});
+        syncSettingsForm();
+        alert(t("settingsSaved"));
+    });
+}
 
-deleteAccountButton.addEventListener("click", function() {
-    alert("Delete account backend is next.");
-});
+if (languageSetting) {
+    languageSetting.addEventListener("change", function () {
+        if (window.LABWORK) {
+            window.LABWORK.setLanguage(languageSetting.value);
+        }
+    });
+}
+
+if (themeSetting) {
+    themeSetting.addEventListener("change", function () {
+        if (window.LABWORK) {
+            window.LABWORK.setTheme(themeSetting.value);
+        }
+    });
+}
+
+if (deleteAccountButton) {
+    deleteAccountButton.addEventListener("click", function () {
+        alert(t("deleteAccountNext"));
+    });
+}
+
+document.addEventListener("labwork:languagechange", syncSettingsForm);
+document.addEventListener("labwork:themechange", syncSettingsForm);
 
 loadProfilePage();

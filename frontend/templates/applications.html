@@ -4,101 +4,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Applications</title>
+    <title>Applications - LABwork</title>
+
+    <script>
+        const savedTheme = localStorage.getItem("labworkTheme") || "light";
+        document.documentElement.dataset.theme = savedTheme;
+    </script>
+
     <link rel="stylesheet" href="/static/styles.css">
+
+    <script src="/static/settings.js"></script>
     <script src="/static/homepage.js" defer></script>
     <script src="/static/account.js" defer></script>
 </head>
 
 <body>
-
     <header class="appNav">
         <div class="appNavBrand">
             <a href="/">LABwork</a>
         </div>
 
         <nav class="appNavLinks">
-            <a href="/">Landing</a>
-            <a href="/applications.html">Applications</a>
-            <a href="/profile.html">Profile / Settings</a>
+            <a href="/" data-i18n="landing">Landing</a>
+            <a href="/applications.html" data-i18n="applications">Applications</a>
+            <a href="/profile.html" data-i18n="profileSettings">Profile / Settings</a>
         </nav>
 
         <div class="appNavAccount">
-            <span id="currentUserDisplay">Checking login...</span>
-            <button id="logoutButton" type="button">Logout</button>
+            <span id="currentUserDisplay" data-i18n="checkingLogin">Checking login...</span>
+            <button id="logoutButton" type="button" data-i18n="logout">Logout</button>
+        </div>
+
+        <div class="settingsControls">
+            <button id="themeToggle" type="button">Dark</button>
+            <button id="languageToggle" type="button">日本語</button>
         </div>
     </header>
-    <div id="jobsDashboard">
-        <div id="applicationControls">
-            <input type="text" id="applicationSearch" placeholder="Search company or position...">
 
-            <select id="statusFilter">
-                <option value="">All Statuses</option>
-                <option value="NYA">Not Yet Applied</option>
-                <option value="Applied">Applied</option>
-                <option value="Rejected">Rejected</option>
-                <option value="Accepted">Accepted</option>
-            </select>
-        </div>
+    <main class="appPage">
+        <section class="pageHeader">
+            <div>
+                <p class="eyebrow" data-i18n="progressTracker">SUSUME Progress Tracker</p>
+                <h1 data-i18n="myApplications">My Applications</h1>
+                <p class="pageSubtitle" data-i18n="applicationsSubtitle">
+                    Track every opportunity from first lead to final result.
+                </p>
+            </div>
 
-        <div id="currentApplications">
-            <table>
-                <thead>
-                    <tr>
-                        <th data-sort="company" data-label="Company">Company</th>
-                        <th data-sort="position" data-label="Position">Position</th>
-                        <th data-sort="status" data-label="Status">Status</th>
-                        <th data-sort="dateApplied" data-label="Date Applied">Date Applied</th>
-                    </tr>
-                </thead>
-                <tbody id="jobTable"></tbody>
-            </table>
-        </div>
+            <button id="newApplicationButton" class="primaryActionButton" type="button" data-i18n="newApplication">
+                New Application
+            </button>
+        </section>
 
-        <button id="newApplicationButton">New Application</button>
-    </div>
+        <section id="jobsDashboard" class="dashboardPanel">
+            <div id="applicationControls" class="applicationToolbar">
+                <div class="searchGroup">
+                    <label for="applicationSearch" data-i18n="search">Search</label>
+                    <input
+                        type="text"
+                        id="applicationSearch"
+                        data-i18n-placeholder="searchPlaceholder"
+                        placeholder="Search company or position..."
+                    >
+                </div>
+
+                <div class="filterGroup">
+                    <label for="statusFilter" data-i18n="status">Status</label>
+                    <select id="statusFilter">
+                        <option value="" data-i18n="allStatuses">All Statuses</option>
+                        <option value="NYA" data-i18n="notYetApplied">Not Yet Applied</option>
+                        <option value="Applied" data-i18n="applied">Applied</option>
+                        <option value="Rejected" data-i18n="rejected">Rejected</option>
+                        <option value="Accepted" data-i18n="accepted">Accepted</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="currentApplications" class="tablePanel">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-sort="company" data-label-key="company" data-i18n="company">Company</th>
+                            <th data-sort="position" data-label-key="position" data-i18n="position">Position</th>
+                            <th data-sort="status" data-label-key="status" data-i18n="status">Status</th>
+                            <th data-sort="dateApplied" data-label-key="dateApplied" data-i18n="dateApplied">Date Applied</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="jobTable"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
     <div id="jobFormOverlay" class="hidden">
         <div id="jobFormPanel">
+            <div class="formHeader">
+                <div>
+                    <p class="eyebrow" data-i18n="applicationEntry">Application Entry</p>
+                    <h2 data-i18n="newApplication">New Application</h2>
+                </div>
+
+                <button type="button" id="cancelButton" class="iconButton" data-i18n="cancel">Cancel</button>
+            </div>
+
             <form id="jobForm" action="">
+                <div class="formGrid">
+                    <div class="fieldGroup">
+                        <label for="companyName" data-i18n="companyName">Company Name</label>
+                        <input
+                            required
+                            type="text"
+                            id="companyName"
+                            data-i18n-placeholder="companyPlaceholder"
+                            placeholder="LABwork Incorporated"
+                        >
+                    </div>
 
-                <label for="companyName">Company Name</label>
-                <input required type="text" id="companyName" placeholder="LABwork Incorporated">
+                    <div class="fieldGroup">
+                        <label for="position" data-i18n="position">Position</label>
+                        <input
+                            required
+                            type="text"
+                            id="position"
+                            data-i18n-placeholder="positionPlaceholder"
+                            placeholder="Radar Technician"
+                        >
+                    </div>
 
-                <label for="position">Position</label>
-                <input required type="text" id="position" placeholder="Radar Technician">
+                    <div class="fieldGroup">
+                        <label for="status" data-i18n="status">Status</label>
+                        <select required name="Status" id="status">
+                            <option value="NYA" data-i18n="notYetApplied">Not Yet Applied</option>
+                            <option value="Applied" data-i18n="applied">Applied</option>
+                            <option value="Rejected" data-i18n="rejected">Rejected</option>
+                            <option value="Accepted" data-i18n="accepted">Accepted</option>
+                        </select>
+                    </div>
 
-                <label for="status">Status</label>
-                <select required name="Status" id="status">
-                    <option value="NYA">Not Yet Applied</option>
-                    <option value="Applied">Applied</option>
-                    <option value="Rejected">Rejected</option>
-                    <option value="Accepted">Accepted</option>
-                </select>
+                    <div class="fieldGroup">
+                        <label for="dateApplied" data-i18n="dateApplied">Date Applied</label>
+                        <input required type="date" id="dateApplied">
+                    </div>
+                </div>
 
-                <div id="statusDetailFields" class="hidden">
-                    <label for="statusDetail">Status Detail</label>
+                <div id="statusDetailFields" class="hidden fieldGroup">
+                    <label for="statusDetail" data-i18n="statusDetail">Status Detail</label>
                     <select id="statusDetail">
-                        <option value="">None</option>
+                        <option value="" data-i18n="none">None</option>
                     </select>
                 </div>
 
-                <div id="interviewFields" class="hidden">
-                    <label for="interviewRound">Interview Round</label>
-                    <input type="number" id="interviewRound" min="1" step="1" placeholder="1">
+                <div id="interviewFields" class="hidden formGrid">
+                    <div class="fieldGroup">
+                        <label for="interviewRound" data-i18n="interviewRound">Interview Round</label>
+                        <input
+                            type="number"
+                            id="interviewRound"
+                            min="1"
+                            step="1"
+                            placeholder="1"
+                        >
+                    </div>
 
-                    <label for="interviewDate">Interview Date</label>
-                    <input type="date" id="interviewDate">
+                    <div class="fieldGroup">
+                        <label for="interviewDate" data-i18n="interviewDate">Interview Date</label>
+                        <input type="date" id="interviewDate">
+                    </div>
                 </div>
 
-                <label for="dateApplied">Date Applied</label>
-                <input required type="date" id="dateApplied">
+                <div class="fieldGroup">
+                    <label for="notes" data-i18n="notes">Notes</label>
+                    <textarea
+                        id="notes"
+                        rows="4"
+                        data-i18n-placeholder="notesPlaceholder"
+                        placeholder="Recruiter notes, interview thoughts, next steps..."
+                    ></textarea>
+                </div>
 
-                <label for="notes">Notes</label>
-                <textarea id="notes" rows="4"
-                    placeholder="Recruiter notes, interview thoughts, next steps..."></textarea>
-
-                <button type="submit" id="createJobButton">Save Job</button>
-                <button type="button" id="cancelButton">Cancel</button>
+                <div class="formActions">
+                    <button type="submit" id="createJobButton" data-i18n="saveJob">Save Job</button>
+                    <button type="button" id="cancelButtonBottom" data-i18n="cancel">Cancel</button>
+                </div>
             </form>
         </div>
     </div>
